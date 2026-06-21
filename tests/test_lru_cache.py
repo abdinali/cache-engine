@@ -19,3 +19,13 @@ def test_delete_missing_key_return_false():
     cache = LRUCache(max_size=3)
     cache.set("a", 5)
     assert cache.delete("b") is False
+
+def test_evicts_least_recently_used_when_full():
+    cache = LRUCache(max_size=2)
+    cache.set("a", 1)           # MRU -> a <- LRU
+    cache.set("b", 2)           # MRU -> b, a <- LRU
+    cache.get("a")              # MRU -> a, b <- LRU
+    cache.set("c", 3)           # MRU -> c, a, b <- LRU
+    assert cache.get("b") is None # b was evicted
+    assert cache.get("a") == 1
+    assert cache.get("c") == 3
