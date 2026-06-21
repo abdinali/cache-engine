@@ -1,9 +1,12 @@
+import time 
+
 class Node:
-    def __init__(self, key, value):
+    def __init__(self, key, value, ttl=None):
         self.key = key
         self.value = value 
         self.prev = None 
         self.next = None
+        self.expires_at = time.time() + ttl if ttl is not None else None
 
 class LRUCache:
     def __init__(self, max_size):
@@ -19,15 +22,16 @@ class LRUCache:
         self._tail.prev = self._head
 
     # public methods
-    def set(self, key, value):
+    def set(self, key, value, ttl=None):
         if key in self._store:
             node = self._store[key]
             node.value = value 
+            node.expires_at = time.time() + ttl if ttl is not None else None
             self._move_to_front(node)
             return
         if self.is_full():
             self._evict_lru()
-        node = Node(key, value)
+        node = Node(key, value, ttl)
         self._store[key] = node
         self._add_to_front(node)
     
@@ -35,6 +39,9 @@ class LRUCache:
         if key not in self._store:
             return None
         node = self._store[key]
+        if node.expires_at is not None and self.is_node_expired(node):
+            self.delete(key)
+            return None
         self._move_to_front(node)
         return node.value
 
@@ -69,3 +76,6 @@ class LRUCache:
     # utility methods
     def is_full(self):
         return len(self._store) >= self.max_size
+
+    def is_node_expired(self, node):
+        return time.time() > node.expires_at
